@@ -1,0 +1,5 @@
+networkx==2.4
+matplotlib==3.2.1
+peewee==3.13.2
+web.py==0.51
+Mako

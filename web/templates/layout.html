@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BGP Simlator</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/1.0.1/pure-min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+
+<body>
+    <div id="layout">
+        <a href="#menu" id="menuLink" class="menu-link">
+            <span></span>
+        </a>
+
+        <div id="menu">
+            <div class="pure-menu">
+                <a class="pure-menu-heading" href="#">BGP模拟</a>
+                <ul class="pure-menu-list">
+                    <li class="pure-menu-item"><a href="#" class="pure-menu-link">节点列表</a></li>
+                    <li class="pure-menu-item"><a href="#" class="pure-menu-link">发报文</a></li>
+                    <li class="pure-menu-item"><a href="#" class="pure-menu-link">查看拓扑</a></li>
+                    <li class="pure-menu-item"><a href="#" class="pure-menu-link">说明</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="main">
+            <div class="header">
+            <%block name="header"/>
+            </div>
+            <div class="content">
+                ${self.body()}
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<%inherit file="layout.html"/>
+
+<h2 class="content-subhead">节点列表</h2>
+
+<div>
+    <div class="pure-g">
+        <div class="pure-u-1-2">
+            <form class="pure-form">
+                <input type="text" placeholder="搜索AS...">
+                <button class="pure-button">搜索</button>
+            </form>
+        </div>
+        <div class="pure-u-1-2">
+            <div class="pagination" style="align-self: flex-end;">
+                <a href="#">&laquo;</a>
+                <a href="#">1</a>
+                <a href="#" class="active">2</a>
+                <a href="#">3</a>
+                <a href="#">4</a>
+                <a href="#">5</a>
+                <a href="#">&raquo;</a>
+            </div>
+        </div>
+    </div>
+</div>
+<table class="pure-table pure-table-bordered stretch">
+    <thead>
+        <th>#</th>
+        <th>ASN</th>
+        <th>操作</th>
+    </thead>
+    <tbody>
+        % for row in data:
+        ${makerow(row)}
+        % endfor
+    </tbody>
+</table>
+
+<%def name="makerow(row)">
+    <tr>
+        <td>${row.id}</td>
+        <td>${row.asn}</td>
+        <td>-</td>
+    </tr>
+</%def>
