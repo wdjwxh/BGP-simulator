@@ -1,0 +1,69 @@
+<%inherit file="layout.html"/>
+
+<h2 class="content-subhead">路由列表</h2>
+
+<div>
+    <div class="pure-g">
+        <div class="pure-u-1-2">
+            <form class="pure-form">
+                <input type="text" name="asn" placeholder="搜索AS">
+                <input type="text" name="origin" placeholder="搜索origin">
+                <input type="text" name="aspath" placeholder="搜索aspath包含">
+                <input type="text" name="prefix" placeholder="搜索prefix">
+                <button class="pure-button">搜索</button>
+            </form>
+        </div>
+        <div class="pure-u-1-2">
+            <div class="pagination" >
+                <a href="/routes?${qs}&page=${max(1, paginate['cur_page']-1)}">&laquo;</a>
+                % for page in paginate['page_list']:
+                % if page != '...':
+                    <a href="/routes?${qs}&page=${page}" 
+                    % if  page == paginate['cur_page']:
+                        class="active"
+                    % endif
+                    >${page}</a>
+                % else:
+                    <a href="#">..</a>
+                % endif
+                % endfor
+                <a href="/routes?${qs}&page=${min(paginate['page_total'], paginate['cur_page'] + 1)}">&raquo;</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div> <p>共计: ${paginate['count']}</p> </div>
+<table class="pure-table pure-table-bordered stretch">
+    <thead>
+        <th>#ID</th>
+        <th>ASN</th>
+        <th>prefix</th>
+        <th>path</th>
+        <th>origin</th>
+        <th>localPerf</th>
+        <th>length</th>
+    </thead>
+    <tbody>
+        % for row in data:
+        ${makerow(row)}
+        % endfor
+    </tbody>
+</table>
+
+<%def name="makerow(row)">
+    <tr>
+        <td>${row.id}</td>
+        <td><a href="/nodes?asn=${row.asn}">${row.asn}</a>
+            (
+            <a href="/relations?asn=${row.asn}&relation_type=providers">Pr</a>
+            <a href="/relations?asn=${row.asn}&relation_type=customers">Cu</a>
+            <a href="/relations?asn=${row.asn}&relation_type=peers">Peer</a>
+            )
+        </td>
+        <td>${row.prefix}</td>
+        <td>${row.aspath}</td>
+        <td>${row.origin}</td>
+        <td>${row.local_perf}</td>
+        <td>${row.as_len}</td>
+    </tr>
+</%def>

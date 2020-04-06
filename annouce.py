@@ -1,24 +1,34 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from db import Asn, Relation, Route
+from db import *
 from bgp_message import *
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+import cProfile
+import pstats
+from pstats import SortKey
 
 
 def handle(msg: BGPUpdateMessage, queue):
-    asn = Asn.get(asn=msg.to_asn)
+    asn = AsnSmall.get(asn=msg.to_asn)
     asn.handle(msg, queue)
     
 
 def start():
     queue = BGPUpdateMessageQueue()
-    ori = Asn.get(asn=268200)
-    ori.build_init_message(queue,'202.112.1.0/22')
-    executor = ThreadPoolExecutor(100)
+    ori = AsnSmall.get(asn=393300)
+    ori.build_init_message(queue,'102.112.1.0/22')
+    executor = ThreadPoolExecutor(128)
     executor_list = []
     Doing = True
+    pr = cProfile.Profile()
+    pr.enable()
+    i = 0
     while Doing:
+        i = i + 1
+        if i % 1000 == 0:
+            p = pstats.Stats(pr)
+            p.sort_stats(SortKey.TIME, SortKey.CUMULATIVE).print_stats(10)
         finish = True
         for future in executor_list:
             if not future.done():
@@ -31,10 +41,11 @@ def start():
             Doing = False
             break
 
-        if not queue.empty():
+        batch_size = 0
+        while not queue.empty() and batch_size < 256:
+            batch_size += 1
             msg = queue.get()
-            obj_list = []
-            print("=== Queue Len: " + str(queue.qsize()))
+            #print("=== Queue Len: " + str(queue.qsize()))
             # print("=====Message Receive=====")
             # print("From:   " + str(msg.from_asn) + "\t" + "To: " + str(msg.to_asn))
             # print("As Path: " + msg.as_path + "\t" + "LocalPerf: " + str(msg.local_perf))

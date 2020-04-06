@@ -16,6 +16,21 @@ class BaseModel(Model):
     class Meta:
         database = database
 
+class Relation(BaseModel):
+    asn_1 = IntegerField(index=True)
+    asn_2 = IntegerField(index=True)
+    relation = IntegerField()
+
+    class Meta:
+        table_name = 'relation'
+
+class RelationSmall(BaseModel):
+    asn_1 = IntegerField(index=True)
+    asn_2 = IntegerField(index=True)
+    relation = IntegerField()
+
+    class Meta:
+        table_name = 'relation_small'
 
 class Route(BaseModel):
     as_len = IntegerField(null=True)
@@ -28,20 +43,41 @@ class Route(BaseModel):
     class Meta:
         table_name = 'route'
 
+class RouteSmall(Route):
+    as_len = IntegerField(null=True)
+    asn = IntegerField(index=True)
+    aspath = CharField(constraints=[SQL("DEFAULT ''")])
+    local_perf = IntegerField()
+    origin = IntegerField()
+    prefix = CharField(constraints=[SQL("DEFAULT ''")])
+
+    class Meta:
+        table_name = 'route_small'
 
 class Asn(BaseModel):
     asn = IntegerField(null=True)
     msg = None
     queue = None
+    use_relation = Relation()
+    use_route = Route()
 
     class Meta:
         table_name = 'asn'
 
+    def set_relation_model(self, model: Relation):
+        self.use_relation = model
+
+    def set_route_model(self, model: Route):
+        self.use_route = model
+
+    def use_small_dataset(self):
+        self.set_relation_model(RelationSmall)
+        self.set_route_model(RouteSmall)
+
     @lru_cache(maxsize=65536)
     def get_peers(self):
-        print('get_peer')
         nodes = []
-        for r in Relation.select().where(((Relation.asn_1 == self.asn) | (Relation.asn_2 == self.asn)) & (Relation.relation == 0)):
+        for r in self.use_relation.select().where(((self.use_relation.asn_1 == self.asn) | (self.use_relation.asn_2 == self.asn)) & (self.use_relation.relation == 0)):
             if r.asn_1 == self.asn:
                 nodes.append(r.asn_2)
             else:
@@ -50,17 +86,15 @@ class Asn(BaseModel):
 
     @lru_cache(maxsize=65536)
     def get_customers(self):
-        print('get_customers')
         nodes = []
-        for r in Relation.select(Relation.asn_2).where((Relation.asn_1 == self.asn) & (Relation.relation == 1)):
+        for r in self.use_relation.select(self.use_relation.asn_2).where((self.use_relation.asn_1 == self.asn) & (self.use_relation.relation == 1)):
             nodes.append(r.asn_2)
         return nodes
 
     @lru_cache(maxsize=65536)
     def get_providers(self):
-        print('get_providers')
         nodes = []
-        for r in Relation.select(Relation.asn_1).where((Relation.asn_2 == self.asn) & (Relation.relation == 1)):
+        for r in self.use_relation.select(self.use_relation.asn_1).where((self.use_relation.asn_2 == self.asn) & (self.use_relation.relation == 1)):
             nodes.append(r.asn_1)
         return nodes
 
@@ -111,7 +145,6 @@ class Asn(BaseModel):
         route = self.find_route(self.msg.prefix)
         if route == None:
             return (True, None)
-        print("As Path: " + route.aspath + "\tLocalPerf: " + str(route.local_perf))
         # 看local_perf,高的采用
         if int(self.msg.local_perf) > route.local_perf:
             return (True, route)
@@ -121,7 +154,7 @@ class Asn(BaseModel):
         return (False, None)
 
     def insert_route(self):
-        route = Route(asn=self.asn, prefix=self.msg.prefix, aspath=self.msg.as_path,
+        route = self.use_route(asn=self.asn, prefix=self.msg.prefix, aspath=self.msg.as_path,
                       origin=self.msg.origin_asn, local_perf=self.msg.local_perf, as_len=self.msg.as_len)
         route.save()
 
@@ -172,31 +205,21 @@ class Asn(BaseModel):
 
     def find_route(self, prefix):
         routes = []
-        for i in Route.select().where((Route.asn == self.asn) & (Route.prefix == prefix)):
+        for i in self.use_route.select().where((self.use_route.asn == self.asn) & (self.use_route.prefix == prefix)):
             routes.append(i)
         return routes[0] if len(routes) > 0 else None
 
-
-class Relation(BaseModel):
-    asn_1 = IntegerField(index=True)
-    asn_2 = IntegerField(index=True)
-    relation = IntegerField()
-
-    class Meta:
-        table_name = 'relation'
-
-class RelationSmall(BaseModel):
-    asn_1 = IntegerField(index=True)
-    asn_2 = IntegerField(index=True)
-    relation = IntegerField()
-
-    class Meta:
-        table_name = 'relation_small'
 
 class AsnSmall(Asn):
     asn = IntegerField(null=True)
     msg = None
     queue = None
+    use_relation = RelationSmall()
+    use_route = RouteSmall()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.use_small_dataset()
 
     class Meta:
         table_name = 'asn_small'

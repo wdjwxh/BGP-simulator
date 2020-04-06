@@ -1,0 +1,66 @@
+<%inherit file="layout.html"/>
+
+<h2 class="content-subhead">节点列表</h2>
+
+<div>
+    <div class="pure-g">
+        <div class="pure-u-1-2">
+            <form class="pure-form">
+                <input type="text" placeholder="搜索AS...">
+                <button class="pure-button">搜索</button>
+            </form>
+        </div>
+        <div class="pure-u-1-2">
+            <div class="pagination" >
+                <a href="/nodes?page=${max(1, paginate['cur_page']-1)}">&laquo;</a>
+                % for page in paginate['page_list']:
+                % if page != '...':
+                    <a href="/nodes?page=${page}" 
+                    % if  page == paginate['cur_page']:
+                        class="active"
+                    % endif
+                    >${page}</a>
+                % else:
+                    <a href="#">..</a>
+                % endif
+                % endfor
+                <a href="/nodes?page=${min(paginate['page_total'], paginate['cur_page'] + 1)}">&raquo;</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div> <p>共计: ${paginate['count']}</p> </div>
+<table class="pure-table pure-table-bordered stretch">
+    <thead>
+        <th>#id</th>
+        <th>ASN</th>
+        <th>Provider</th>
+        <th>Customer</th>
+        <th>Peer</th>
+        <th>操作</th>
+    </thead>
+    <tbody>
+        % for row in data:
+        ${makerow(row)}
+        % endfor
+    </tbody>
+</table>
+
+<%def name="makerow(row)">
+    <tr>
+        <td>${row.id}</td>
+        <td>${row.asn}</td>
+        <td>
+            <a href="/relations?asn=${row.asn}&relation_type=providers">${len(row.get_providers())}</a>
+        </td>
+        <td>
+            <a href="/relations?asn=${row.asn}&relation_type=customers">${len(row.get_customers())}</a>
+        </td>
+        <td>
+            <a href="/relations?asn=${row.asn}&relation_type=peers">${len(row.get_peers())}</a>
+        </td>
+        <td>
+            <a href="/routes?asn=${row.asn}">Route</a>
+        </td>
+    </tr>
+</%def>

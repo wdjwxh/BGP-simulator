@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>BGP TOPO</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script type="text/javascript" src="https://visjs.github.io/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+
+    <style>
+        body {
+            color: #d3d3d3;
+            font: 12pt arial;
+            background-color: #222222;
+        }
+
+        #mynetwork {
+            margin-top: 40px;
+            width: 90vw;
+            height: 90vh;
+            border: 1px solid #444444;
+            background-color: #222222;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <label>
+            过滤
+            <div>
+                <label>
+                    <input type='checkbox' name='edgesFilter' value='p2p'></input>
+                    <span style="color:blue">p2p</span>
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type='checkbox' name='edgesFilter' value='p2c' checked></input>
+                    <span style="color:green">p2c</span>
+                </label>
+            </div>
+        </label>
+    </div>
+    <div id="mynetwork">
+    </div>
+
+
+    <script>
+        $(function () {
+
+            // const nodeFilterSelector = document.getElementById('nodeFilterSelect')
+            const edgeFilters = document.getElementsByName('edgesFilter')
+
+            let nodeFilterValue = '';
+            const edgesFilterValues = {
+                p2p: false,
+                p2c: true
+            }
+
+            /*
+              filter function should return true or false
+              based on whether item in DataView satisfies a given condition.
+            */
+            const nodesFilter = (node) => {
+                if (nodeFilterValue === '') {
+                    return true
+                }
+                switch (nodeFilterValue) {
+                    case ('female'):
+                        return node.gender === 'female'
+                    default:
+                        return true
+                }
+            }
+
+            const edgesFilter = (edge) => {
+                return edgesFilterValues[edge.relation]
+            }
+
+            $.getJSON('/topo-json?asn=${asn}', function (res) {
+                var container = document.getElementById('mynetwork');
+                const nodes = new vis.DataSet(res.nodes);
+                const edges = new vis.DataSet(res.edges);
+
+                const nodesView = new vis.DataView(nodes, { filter: nodesFilter })
+                const edgesView = new vis.DataView(edges, { filter: edgesFilter })
+                edgesView.refresh()
+
+                // nodeFilterSelector.addEventListener('change', (e) => {
+                //     nodeFilterValue = e.target.value
+                //     nodesView.refresh()
+                // })
+
+                edgeFilters.forEach(filter => filter.addEventListener('change', (e) => {
+                    const { value, checked } = e.target
+                    edgesFilterValues[value] = checked
+                    edgesView.refresh()
+                }))
+
+                var data = {
+                    nodes: nodesView,
+                    edges: edgesView
+                };
+                var options = {
+                    nodes: {
+                        scaling: {
+                            customScalingFunction: function (min, max, total, value) {
+                                return value / total;
+                            },
+                            min: 10,
+                            max: 150
+                        },
+                    },
+                    edges: {
+                        width: 2
+                    },
+                    physics: {
+                        stabilization: false,
+                        barnesHut: {
+                            gravitationalConstant: -800,
+                            springConstant: 0.001,
+                            springLength: 200
+                        }
+                    },
+                    interaction: {
+                        tooltipDelay: 200,
+                        hideEdgesOnDrag: true
+                    }
+                };
+                network = new vis.Network(container, data, options);
+            });
+        });
+    </script>
+</body>
+
+</html>
